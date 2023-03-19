@@ -103,9 +103,10 @@ bool Uart::receive(char* data){
 	__enable_irq();
 
 	if(startOfData > newLine){
-		memcpy(data, (const void*)readBuffer + startOfData, readBufferLenght - startOfData);
-		memcpy(data, (const void*)readBuffer, newLine + 1);
-		data[newLine + 1] = '\0';
+		uint16_t diff = readBufferLenght - startOfData;
+		memcpy(data, (const void*)readBuffer + startOfData, diff);
+		memcpy(data + diff, (const void*)readBuffer, newLine + 1);
+		data[diff + newLine + 1] = '\0';
 	}else{
 		memcpy(data, (const void*)readBuffer + startOfData, newLine - startOfData + 1);
 		data[newLine - startOfData + 1] = '\0';
