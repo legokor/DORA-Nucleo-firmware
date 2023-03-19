@@ -21,6 +21,11 @@ void Motor::init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t time
 }
 
 void Motor::setSpeed(int power){
+	if(power < -(timerPeriod-1))
+		power = -(timerPeriod-1);
+	if(power > (timerPeriod-1))
+		power = (timerPeriod-1);
+
 	HAL_GPIO_WritePin(dirPort, dirPin, (power > 0) xor reversed ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
 	uint32_t setValue = std::abs(power) * timerPeriod / 255;
