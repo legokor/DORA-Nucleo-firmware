@@ -42,6 +42,42 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
+extern ADC_HandleTypeDef hadc1;
+
+extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim8;
+
+extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart2;
+
+
+
+
+#define BAT_ADC &hadc1
+
+#define IMU_I2C &hi2c1
+#define LCD_I2C &hi2c2
+
+#define MOT1_TIM &htim1
+#define MOT23_TIM &htim2
+
+#define MOT1_EN_CH TIM_CHANNEL_2
+#define MOT2_EN_CH TIM_CHANNEL_2
+#define MOT3_EN_CH TIM_CHANNEL_4
+
+#define ENC1_TIM &htim3
+#define ENC2_TIM &htim5
+#define ENC3_TIM &htim8
+
+#define SERIAL &huart2
+#define GPS_UART &huart4
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -55,6 +91,8 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+
+void myMain();
 
 /* USER CODE END EFP */
 
