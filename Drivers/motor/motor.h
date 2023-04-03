@@ -24,7 +24,7 @@ public:
 
 	/*
 	 * Sets the power and direction of the motor
-	 * power - a value between -255 and 255
+	 * power - a value between -(timerPeriod-1) and (timerPeriod-1)
 	 */
 	void setSpeed(int power);
 

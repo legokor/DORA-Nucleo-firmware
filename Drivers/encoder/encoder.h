@@ -16,8 +16,8 @@ public:
 	/*
 	 * Initializes the encoder object
 	 */
-	void init(TIM_HandleTypeDef* encoderTimer, uint32_t captureChannelA, HAL_TIM_ActiveChannel activeChannelA, uint16_t timerPeriod, uint32_t countsPerSecond,
-			GPIO_TypeDef* portA, uint16_t pinA, GPIO_TypeDef* portB, uint16_t pinB, uint16_t maxCountsPerSecond);
+	void init(TIM_HandleTypeDef* encoderTimer, uint32_t captureChannelA, HAL_TIM_ActiveChannel activeChannelA, uint32_t timerPeriod, uint32_t timerFrequency,
+			GPIO_TypeDef* portA, uint16_t pinA, GPIO_TypeDef* portB, uint16_t pinB, uint16_t maxCountsPerSecond, bool reversed);
 
 	/*
 	 * Call whenever a timer overflows
@@ -35,7 +35,7 @@ public:
 	uint32_t getPosition();
 
 	/*
-	 * Returns the encoder relative speed scaled to -100 - 100 (from -maxCountsPerSecond - maxCountsPerSecond)
+	 * Returns the encoder relative speed scaled to -1 - 1 (from -maxCountsPerSecond - maxCountsPerSecond)
 	 */
 	float getSpeed();
 
@@ -43,21 +43,24 @@ private:
 	TIM_HandleTypeDef* encoderTimer;
 	uint32_t captureChannelA;
 	HAL_TIM_ActiveChannel activeChannelA;
-	uint16_t timerPeriod;
-	uint32_t countsPerSecond;
+	uint32_t timerPeriod;
+	uint32_t timerFrequency;
 	GPIO_TypeDef* portA;
 	uint16_t pinA;
 	GPIO_TypeDef* portB;
 	uint16_t pinB;
 	uint16_t maxCountsPerSecond;
+	bool reversed;
+	float periodDivCps;
 
-	uint32_t absolutePosition;
+	volatile uint32_t absolutePosition;
 
 	uint16_t maxOverflowCount;
-	uint16_t overflowCounter;
-	uint16_t lastCaptureTimerValue;
-	uint32_t lastInterval;
-	bool stopped;
+	volatile uint16_t overflowCounter;
+	volatile uint16_t lastCaptureTimerValue;
+	volatile int32_t lastInterval;
+	volatile bool stopped;
+	volatile bool firstReading;
 
 };
 
