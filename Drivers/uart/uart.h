@@ -29,10 +29,9 @@ public:
 	void handleReceiveCplt(UART_HandleTypeDef *huart);
 
 	/*
-	 * Transmits the data until (max lenght is writeBufferLenght)
-	 * returns false, if a transmission is already in progress or incorrect format
+	 * Transmits the data (max lenght is writeBufferLenght)
 	 */
-	bool transmit(const char *fmt, ...);
+	void transmit(const char *fmt, ...);
 
 	/*
 	 * Receives the data until the last received \n, ignores \r (max lenght is readBufferLenght)
@@ -50,14 +49,16 @@ private:
 	uint16_t writeBufferLenght;
 	uint16_t readBufferLenght;
 
+	volatile char* writeCircularBuffer;
+	volatile int32_t startOfWriteData;
+	volatile int32_t endOfWriteData;
 	volatile char* writeBuffer;
+	volatile bool transmissionInProgress;
 
-	volatile bool writeInProgress;
-
-	volatile char* readBuffer;
-	volatile uint16_t startOfData;
-	volatile uint16_t writePtr;
-	volatile bool writePtrOverflow;
+	volatile char* readCircularBuffer;
+	volatile uint16_t startOfReadData;
+	volatile uint16_t readPtr;
+	volatile bool readPtrOverflow;
 	volatile int32_t mostRecentNewLinePos;
 };
 

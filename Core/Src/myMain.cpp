@@ -42,6 +42,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	encoder1.handleTimerOverflow(htim);
 	encoder2.handleTimerOverflow(htim);
 	encoder3.handleTimerOverflow(htim);
+	motor1.handleTimerOverflow(htim);
+	motor2.handleTimerOverflow(htim);
+	motor3.handleTimerOverflow(htim);
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
@@ -69,25 +72,30 @@ void controlMotor(float x, float y, float w) {
 		m3 *= mult;
 	}
 
-	motor1.setSpeed(m1 * 1024);
-	motor2.setSpeed(m2 * 1024);
-	motor3.setSpeed(m3 * 1024);
+	motor1.setPowerPWM(m1 * 1024);
+	motor2.setPowerPWM(m2 * 1024);
+	motor3.setPowerPWM(m3 * 1024);
 }
 
 
 extern "C"{
 
 void myMain(){
-	console.init(SERIAL, 1000, 1000);
-	motor1.init(MOT1_TIM, MOT1_EN_CH, 1024, MOT1_DIR_GPIO_Port, MOT1_DIR_Pin, false);
-	motor3.init(MOT23_TIM, MOT3_EN_CH, 1024, MOT3_DIR_GPIO_Port, MOT3_DIR_Pin, false);
-	motor2.init(MOT23_TIM, MOT2_EN_CH, 1024, MOT2_DIR_GPIO_Port, MOT2_DIR_Pin, false);
+	console.init(SERIAL, 30, 30);
+	motor1.init(MOT1_TIM, MOT1_EN_CH, 1024, 18000000, MOT1_DIR_GPIO_Port, MOT1_DIR_Pin, false, true, &encoder1, 1.5f, 40.0f, 0.0f);
+	motor3.init(MOT23_TIM, MOT3_EN_CH, 1024, 18000000, MOT3_DIR_GPIO_Port, MOT3_DIR_Pin, false, true, &encoder3, 1.5f, 40.0f, 0.0f);
+	motor2.init(MOT23_TIM, MOT2_EN_CH, 1024, 18000000, MOT2_DIR_GPIO_Port, MOT2_DIR_Pin, false, true, &encoder2, 1.5f, 40.0f, 0.0f);
 
-	encoder1.init(ENC1_TIM, ENC1_CHANNEL, ENC1_ACTIVE_CHANNEL, 65536, 22500000, ENC1_A_GPIO_Port, ENC1_A_Pin, ENC1_B_GPIO_Port, ENC1_B_Pin, 3360, false);
+	encoder1.init(ENC1_TIM, ENC1_CHANNEL, ENC1_ACTIVE_CHANNEL, 65536, 22500000, ENC1_A_GPIO_Port, ENC1_A_Pin, ENC1_B_GPIO_Port, ENC1_B_Pin, 3360, true);
 	encoder2.init(ENC2_TIM, ENC2_CHANNEL, ENC2_ACTIVE_CHANNEL, 65536, 22500000, ENC2_A_GPIO_Port, ENC2_A_Pin, ENC2_B_GPIO_Port, ENC2_B_Pin, 3360, false);
-	encoder3.init(ENC3_TIM, ENC3_CHANNEL, ENC3_ACTIVE_CHANNEL, 65536, 22500000, ENC3_A_GPIO_Port, ENC3_A_Pin, ENC3_B_GPIO_Port, ENC3_B_Pin, 3360, false);
+	encoder3.init(ENC3_TIM, ENC3_CHANNEL, ENC3_ACTIVE_CHANNEL, 65536, 22500000, ENC3_A_GPIO_Port, ENC3_A_Pin, ENC3_B_GPIO_Port, ENC3_B_Pin, 3360, true);
 
-	console.transmit("Na csaaaaa\n");
+	/*while(1){
+	console.transmit("Na csaa\n");
+	console.transmit("Szia ");
+	console.transmit("hello!\n");
+	HAL_Delay(100);
+	}*/
 
 
 	float vx = 0, vy = 0, w = 0;
@@ -113,7 +121,11 @@ void myMain(){
 
 			float speed = atof(cmd2);
 
-			if(strcmp(cmd1, "M1")==0){
+			if(strcmp(cmd1, "M") == 0){
+				vx = atof(cmd2+1);
+				vy = atof(strchr(cmd2+1, ' ')+1);
+				controlMotor(vx, vy, w);
+			}else if(strcmp(cmd1, "M1")==0){
 				console.transmit("M1 power: %f\n", speed);
 				motor1.setSpeed(speed);
 			}

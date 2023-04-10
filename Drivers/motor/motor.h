@@ -9,6 +9,7 @@
 #define MOTOR_MOTOR_H_
 
 #include "stm32f4xx_hal.h"
+#include "encoder.h"
 
 
 
@@ -20,13 +21,25 @@ public:
 	/*
 	 * Initializes the object
 	 */
-	void init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t timerPeriod, GPIO_TypeDef* dirPort, uint16_t dirPin, bool reversed);
+	void init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t timerPeriod, uint32_t timerFrequency, GPIO_TypeDef* dirPort, uint16_t dirPin,
+			bool reversed, bool speedControlEnabled = false, Encoder* encoder = nullptr, float P = 0, float I = 0, float D = 0);
 
 	/*
-	 * Sets the power and direction of the motor
+	 * Call when the motor's timer has overflown (if speed control is enabled)
+	 */
+	void handleTimerOverflow(TIM_HandleTypeDef* htim);
+
+	/*
+	 * Sets the power and direction of the motor (if speed control is disabled)
 	 * power - a value between -(timerPeriod-1) and (timerPeriod-1)
 	 */
-	void setSpeed(int power);
+	void setPowerPWM(int power);
+
+	/*
+	 * Sets the speed of the motor (if speed control is enabled)
+	 * speed - a value between -100 and 100
+	 */
+	void setSpeed(float speed);
 
 private:
 	TIM_HandleTypeDef* pwmTimer;
@@ -35,6 +48,14 @@ private:
 	GPIO_TypeDef* dirPort;
 	uint16_t dirPin;
 	bool reversed;
+	bool speedControlEnabled;
+	Encoder* encoder;
+	float P, I, D;
+	float dt;
+	volatile float targetSpeed;
+	volatile float errorIntegral;
+	volatile float lastError;
+	volatile int controlCounter;
 };
 
 

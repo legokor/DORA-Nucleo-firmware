@@ -21,7 +21,7 @@ void Encoder::init(TIM_HandleTypeDef* encoderTimer, uint32_t captureChannelA, HA
 	this->pinB = pinB;
 	this->maxCountsPerSecond = maxCountsPerSecond;
 	this->reversed = reversed;
-	this->periodDivCps = (float)timerFrequency / maxCountsPerSecond;
+	this->periodDivCps = (float)timerFrequency / maxCountsPerSecond * 100;
 
 	this->absolutePosition = 0;
 	this->lastCaptureTimerValue = 0;

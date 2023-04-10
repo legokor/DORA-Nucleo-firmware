@@ -18,39 +18,95 @@ void Uart::init(UART_HandleTypeDef *huart, uint16_t writeBufferLenght, uint16_t 
 	this->writeBufferLenght = writeBufferLenght;
 	this->readBufferLenght = readBufferLenght;
 	this->mostRecentNewLinePos = -1;
-	this->startOfData = 0;
-	this->writePtr = 0;
-	this->writePtrOverflow = false;
-	this->writeInProgress = false;
-	writeBuffer = (char*)malloc(writeBufferLenght);
-	readBuffer = (char*)malloc(readBufferLenght);
+	this->startOfReadData = 0;
+	this->readPtr = 0;
+	this->readPtrOverflow = false;
 
-	HAL_UART_Receive_IT(huart, (uint8_t*)readBuffer, 1);
+	this->startOfWriteData = -1;
+	this->endOfWriteData = writeBufferLenght - 1;
+	this->transmissionInProgress = false;
+
+	writeBuffer = (char*)malloc(writeBufferLenght+1);
+	writeCircularBuffer = (char*)malloc(writeBufferLenght+1);
+	readCircularBuffer = (char*)malloc(readBufferLenght+1);
+
+	HAL_UART_Receive_IT(huart, (uint8_t*)readCircularBuffer, 1);
 }
 
 
 void Uart::handleTransmitCplt(UART_HandleTypeDef *huart){
-	if(this->huart == huart)
-		writeInProgress = false;
+	if(this->huart != huart)
+		return;
+	if(startOfWriteData == -1){
+		transmissionInProgress = false;
+		return;
+	}
+	int charCount;
+	if(startOfWriteData <= endOfWriteData){
+		charCount = endOfWriteData - startOfWriteData + 1;
+		HAL_UART_Transmit_IT(huart, (uint8_t*)writeCircularBuffer + startOfWriteData, charCount);
+		startOfWriteData = -1;
+	}
+	else{
+		charCount = writeBufferLenght - startOfWriteData;
+		HAL_UART_Transmit_IT(huart, (uint8_t*)writeCircularBuffer + startOfWriteData, charCount);
+		startOfWriteData = 0;
+	}
 }
 
 
-bool Uart::transmit(const char *fmt, ...){
-	if(writeInProgress)
-		return false;
-
+void Uart::transmit(const char *fmt, ...){
 	va_list args;
 	va_start(args, fmt);
 
 	int size = vsprintf((char*)writeBuffer, fmt, args);
-	if(size<0)
-		return false;
+	if(size<=0)
+		return;
 
-	writeInProgress = true;
+	int spaceTillBufferEnd = writeBufferLenght - endOfWriteData - 1;
 
-	HAL_UART_Transmit_IT(huart, (uint8_t*)writeBuffer, size);
-
-	return true;
+	if(spaceTillBufferEnd >= size){
+		memcpy((void*)writeCircularBuffer + endOfWriteData + 1, (const void*)writeBuffer, size);
+		__disable_irq();
+		if(startOfWriteData == -1){
+			if(transmissionInProgress){
+				startOfWriteData = endOfWriteData + 1;
+			}else{
+				HAL_UART_Transmit_IT(huart, (uint8_t*)writeCircularBuffer + endOfWriteData + 1, size);
+				transmissionInProgress = true;
+			}
+		}
+		endOfWriteData = endOfWriteData + size;
+		__enable_irq();
+	}else{
+		if(spaceTillBufferEnd > 0)
+			memcpy((void*)writeCircularBuffer + endOfWriteData + 1, (const void*)writeBuffer, spaceTillBufferEnd);
+		memcpy((void*)writeCircularBuffer, (const void*)writeBuffer + spaceTillBufferEnd, size - spaceTillBufferEnd);
+		__disable_irq();
+		if(startOfWriteData == -1){
+			if(spaceTillBufferEnd == 0){
+				if(transmissionInProgress){
+					startOfWriteData = 0;
+				}else{
+					transmissionInProgress = true;
+					HAL_UART_Transmit_IT(huart, (uint8_t*)writeCircularBuffer, size);
+				}
+				endOfWriteData = size - 1;
+			}else{
+				if(transmissionInProgress){
+					startOfWriteData = endOfWriteData + 1;
+				}else{
+					transmissionInProgress = true;
+					startOfWriteData = 0;
+					HAL_UART_Transmit_IT(huart, (uint8_t*)writeCircularBuffer + endOfWriteData + 1, spaceTillBufferEnd);
+				}
+				endOfWriteData = size - spaceTillBufferEnd - 1;
+			}
+		}else{
+			endOfWriteData = size - spaceTillBufferEnd - 1;
+		}
+		__enable_irq();
+	}
 }
 
 
@@ -58,57 +114,57 @@ void Uart::handleReceiveCplt(UART_HandleTypeDef *huart){
 	if(this->huart != huart)
 		return;
 
-	char c = readBuffer[writePtr];
+	char c = readCircularBuffer[readPtr];
 
 	if(c == '\r'){
-		HAL_UART_Receive_IT(huart, (uint8_t*)readBuffer + writePtr, 1);
+		HAL_UART_Receive_IT(huart, (uint8_t*)readCircularBuffer + readPtr, 1);
 		return;
 	}
 
-	if(readBuffer[writePtr] == '\n'){
-		mostRecentNewLinePos = writePtr;
+	if(readCircularBuffer[readPtr] == '\n'){
+		mostRecentNewLinePos = readPtr;
 	}
 
-	writePtr++;
-	if(writePtr == readBufferLenght){
-		writePtrOverflow = true;
-		writePtr = 0;
+	readPtr++;
+	if(readPtr == readBufferLenght){
+		readPtrOverflow = true;
+		readPtr = 0;
 	}
 
-	if(writePtr == mostRecentNewLinePos)
+	if(readPtr == mostRecentNewLinePos)
 		mostRecentNewLinePos = -1;
 
-	if(writePtr == startOfData){
-		startOfData++;
-		if(startOfData == readBufferLenght)
-			startOfData = 0;
+	if(readPtr == startOfReadData){
+		startOfReadData++;
+		if(startOfReadData == readBufferLenght)
+			startOfReadData = 0;
 	}
 
-	HAL_UART_Receive_IT(huart, (uint8_t*)readBuffer + writePtr, 1);
+	HAL_UART_Receive_IT(huart, (uint8_t*)readCircularBuffer + readPtr, 1);
 }
 
 
 bool Uart::receive(char* data){
 	__disable_irq();
 	int32_t newLine = mostRecentNewLinePos;
-	uint16_t startOfData = this->startOfData;
+	uint16_t startOfData = this->startOfReadData;
 	if(newLine == -1){
 		__enable_irq();
 		return false;
 	}
 	mostRecentNewLinePos = -1;
-	this->startOfData = newLine+1;
-	if(this->startOfData == readBufferLenght)
-		this->startOfData = 0;
+	this->startOfReadData = newLine+1;
+	if(this->startOfReadData == readBufferLenght)
+		this->startOfReadData = 0;
 	__enable_irq();
 
 	if(startOfData > newLine){
 		uint16_t diff = readBufferLenght - startOfData;
-		memcpy(data, (const void*)readBuffer + startOfData, diff);
-		memcpy(data + diff, (const void*)readBuffer, newLine + 1);
+		memcpy(data, (const void*)readCircularBuffer + startOfData, diff);
+		memcpy(data + diff, (const void*)readCircularBuffer, newLine + 1);
 		data[diff + newLine + 1] = '\0';
 	}else{
-		memcpy(data, (const void*)readBuffer + startOfData, newLine - startOfData + 1);
+		memcpy(data, (const void*)readCircularBuffer + startOfData, newLine - startOfData + 1);
 		data[newLine - startOfData + 1] = '\0';
 	}
 

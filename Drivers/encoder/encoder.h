@@ -35,7 +35,7 @@ public:
 	uint32_t getPosition();
 
 	/*
-	 * Returns the encoder relative speed scaled to -1 - 1 (from -maxCountsPerSecond - maxCountsPerSecond)
+	 * Returns the encoder relative speed scaled to -100 - 100 (from -maxCountsPerSecond - maxCountsPerSecond)
 	 */
 	float getSpeed();
 
