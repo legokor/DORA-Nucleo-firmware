@@ -61,6 +61,7 @@ private:
 	volatile int32_t lastInterval;
 	volatile bool stopped;
 	volatile bool firstReading;
+	volatile bool ok = false;
 
 };
 

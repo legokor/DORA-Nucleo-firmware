@@ -21,7 +21,7 @@ public:
 	/*
 	 * Initializes the object
 	 */
-	void init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t timerPeriod, uint32_t timerFrequency, GPIO_TypeDef* dirPort, uint16_t dirPin,
+	void init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, bool chN, uint16_t timerPeriod, uint16_t maxPWM, uint32_t timerFrequency, GPIO_TypeDef* dirPort, uint16_t dirPin,
 			bool reversed, bool speedControlEnabled = false, Encoder* encoder = nullptr, float P = 0, float I = 0, float D = 0);
 
 	/*
@@ -47,8 +47,10 @@ private:
 	uint32_t timerPeriod;
 	GPIO_TypeDef* dirPort;
 	uint16_t dirPin;
+	uint16_t maxPWM;
 	bool reversed;
 	bool speedControlEnabled;
+	bool chN;
 	Encoder* encoder;
 	float P, I, D;
 	float dt;
@@ -56,6 +58,7 @@ private:
 	volatile float errorIntegral;
 	volatile float lastError;
 	volatile int controlCounter;
+	volatile bool ok = false;
 };
 
 

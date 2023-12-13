@@ -13,7 +13,7 @@
 
 
 
-void Uart::init(UART_HandleTypeDef *huart, uint16_t writeBufferLenght, uint16_t readBufferLenght){
+void Uart::init(UART_HandleTypeDef *huart, IRQn_Type uartIr, uint16_t writeBufferLenght, uint16_t readBufferLenght){
 	this->huart = huart;
 	this->writeBufferLenght = writeBufferLenght;
 	this->readBufferLenght = readBufferLenght;
@@ -21,6 +21,7 @@ void Uart::init(UART_HandleTypeDef *huart, uint16_t writeBufferLenght, uint16_t 
 	this->startOfReadData = 0;
 	this->readPtr = 0;
 	this->readPtrOverflow = false;
+	this->uartIr = uartIr;
 
 	this->startOfWriteData = -1;
 	this->endOfWriteData = writeBufferLenght - 1;
@@ -31,11 +32,12 @@ void Uart::init(UART_HandleTypeDef *huart, uint16_t writeBufferLenght, uint16_t 
 	readCircularBuffer = (char*)malloc(readBufferLenght+1);
 
 	HAL_UART_Receive_IT(huart, (uint8_t*)readCircularBuffer, 1);
+	this->ok = true;
 }
 
 
 void Uart::handleTransmitCplt(UART_HandleTypeDef *huart){
-	if(this->huart != huart)
+	if(this->huart != huart || !ok)
 		return;
 	if(startOfWriteData == -1){
 		transmissionInProgress = false;
@@ -67,7 +69,7 @@ void Uart::transmit(const char *fmt, ...){
 
 	if(spaceTillBufferEnd >= size){
 		memcpy((void*)writeCircularBuffer + endOfWriteData + 1, (const void*)writeBuffer, size);
-		__disable_irq();
+		HAL_NVIC_DisableIRQ(uartIr);
 		if(startOfWriteData == -1){
 			if(transmissionInProgress){
 				startOfWriteData = endOfWriteData + 1;
@@ -77,12 +79,12 @@ void Uart::transmit(const char *fmt, ...){
 			}
 		}
 		endOfWriteData = endOfWriteData + size;
-		__enable_irq();
+		HAL_NVIC_EnableIRQ(uartIr);
 	}else{
 		if(spaceTillBufferEnd > 0)
 			memcpy((void*)writeCircularBuffer + endOfWriteData + 1, (const void*)writeBuffer, spaceTillBufferEnd);
 		memcpy((void*)writeCircularBuffer, (const void*)writeBuffer + spaceTillBufferEnd, size - spaceTillBufferEnd);
-		__disable_irq();
+		HAL_NVIC_DisableIRQ(uartIr);
 		if(startOfWriteData == -1){
 			if(spaceTillBufferEnd == 0){
 				if(transmissionInProgress){
@@ -105,7 +107,7 @@ void Uart::transmit(const char *fmt, ...){
 		}else{
 			endOfWriteData = size - spaceTillBufferEnd - 1;
 		}
-		__enable_irq();
+		HAL_NVIC_EnableIRQ(uartIr);
 	}
 }
 
@@ -145,18 +147,18 @@ void Uart::handleReceiveCplt(UART_HandleTypeDef *huart){
 
 
 bool Uart::receive(char* data){
-	__disable_irq();
+	HAL_NVIC_DisableIRQ(uartIr);
 	int32_t newLine = mostRecentNewLinePos;
 	uint16_t startOfData = this->startOfReadData;
 	if(newLine == -1){
-		__enable_irq();
+		HAL_NVIC_EnableIRQ(uartIr);
 		return false;
 	}
 	mostRecentNewLinePos = -1;
 	this->startOfReadData = newLine+1;
 	if(this->startOfReadData == readBufferLenght)
 		this->startOfReadData = 0;
-	__enable_irq();
+	HAL_NVIC_EnableIRQ(uartIr);
 
 	if(startOfData > newLine){
 		uint16_t diff = readBufferLenght - startOfData;

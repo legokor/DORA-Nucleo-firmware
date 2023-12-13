@@ -9,7 +9,7 @@
 #include <math.h>
 
 
-void Motor::init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t timerPeriod, uint32_t timerFrequency, GPIO_TypeDef* dirPort, uint16_t dirPin,
+void Motor::init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, bool chN, uint16_t timerPeriod, uint16_t maxPWM, uint32_t timerFrequency, GPIO_TypeDef* dirPort, uint16_t dirPin,
 		bool reversed, bool speedControlEnabled, Encoder* encoder, float P, float I, float D){
 	this->pwmTimer = pwmTimer;
 	this->pwmChannel = pwmChannel;
@@ -27,11 +27,18 @@ void Motor::init(TIM_HandleTypeDef* pwmTimer, uint32_t pwmChannel, uint16_t time
 	this->lastError = 0;
 	this->dt = 1.0f * 100 / (timerFrequency / timerPeriod);
 	this->controlCounter = 0;
+	this->maxPWM = maxPWM;
+	this->chN = chN;
 
 	if(speedControlEnabled)
 		HAL_TIM_Base_Start_IT(pwmTimer);
-	HAL_TIM_PWM_Start_IT(pwmTimer, pwmChannel);
 
+	if(chN)
+		HAL_TIMEx_PWMN_Start(pwmTimer, pwmChannel);
+	else
+		HAL_TIM_PWM_Start(pwmTimer, pwmChannel);
+
+	this->ok = true;
 }
 
 void Motor::setPowerPWM(int power){
@@ -42,6 +49,8 @@ void Motor::setPowerPWM(int power){
 
 	if(setValue > timerPeriod - 1)
 		setValue = timerPeriod - 1;
+	if(setValue > maxPWM)
+		setValue = maxPWM;
 
 	switch (pwmChannel) {
 		case TIM_CHANNEL_1 : pwmTimer->Instance->CCR1 = setValue; break;
@@ -56,11 +65,15 @@ void Motor::setSpeed(float speed){
 		speed = 100;
 	if(speed < -100)
 		speed = -100;
-	targetSpeed = speed;
+	if(speedControlEnabled){
+		targetSpeed = speed;
+	}else{
+		setPowerPWM((timerPeriod - 1) / 100.0f * speed);
+	}
 }
 
 void Motor::handleTimerOverflow(TIM_HandleTypeDef* htim){
-	if(htim != pwmTimer || !speedControlEnabled)
+	if(htim != pwmTimer || !speedControlEnabled || !ok)
 		return;
 	controlCounter++;
 	if(controlCounter < 100)

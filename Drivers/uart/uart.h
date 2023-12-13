@@ -16,7 +16,7 @@ public:
 	/*
 	 * Initializes the UART object
 	 */
-	void init(UART_HandleTypeDef *huart, uint16_t writeBufferLenght, uint16_t readBufferLenght);
+	void init(UART_HandleTypeDef *huart, IRQn_Type uartIr, uint16_t writeBufferLenght, uint16_t readBufferLenght);
 
 	/*
 	 * Call when the HAL_UART_TxCpltCallback function is called
@@ -45,6 +45,7 @@ public:
 
 private:
 	UART_HandleTypeDef* huart;
+	IRQn_Type uartIr;
 
 	uint16_t writeBufferLenght;
 	uint16_t readBufferLenght;
@@ -60,6 +61,7 @@ private:
 	volatile uint16_t readPtr;
 	volatile bool readPtrOverflow;
 	volatile int32_t mostRecentNewLinePos;
+	volatile bool ok = false;
 };
 
 

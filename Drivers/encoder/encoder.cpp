@@ -25,7 +25,7 @@ void Encoder::init(TIM_HandleTypeDef* encoderTimer, uint32_t captureChannelA, HA
 
 	this->absolutePosition = 0;
 	this->lastCaptureTimerValue = 0;
-	this->maxOverflowCount = (float)timerFrequency / timerPeriod * 0.05f + 1; 	//0.05s needs to pass without encoder reading to declare the motor as stopped
+	this->maxOverflowCount = (float)timerFrequency / timerPeriod * 0.015f + 1; 	//0.015s needs to pass without encoder reading to declare the motor as stopped
 	this->stopped = true;
 	this->firstReading = true;
 	this->lastInterval = 0;
@@ -33,10 +33,12 @@ void Encoder::init(TIM_HandleTypeDef* encoderTimer, uint32_t captureChannelA, HA
 
 	HAL_TIM_Base_Start_IT(encoderTimer);
 	HAL_TIM_IC_Start_IT(encoderTimer, captureChannelA);
+
+	this->ok = true;
 }
 
 void Encoder::handleTimerOverflow(TIM_HandleTypeDef* htim){
-	if(htim != encoderTimer)
+	if(htim != encoderTimer || !ok)
 		return;
 	overflowCounter++;
 	if(overflowCounter > maxOverflowCount){
@@ -47,7 +49,7 @@ void Encoder::handleTimerOverflow(TIM_HandleTypeDef* htim){
 }
 
 void Encoder::handleInputCapture(TIM_HandleTypeDef* htim){
-	if(htim != encoderTimer || htim->Channel != activeChannelA)
+	if(htim != encoderTimer || htim->Channel != activeChannelA || !ok)
 		return;
 
 	uint32_t timerValue = HAL_TIM_ReadCapturedValue(htim, captureChannelA);

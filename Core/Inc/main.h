@@ -51,10 +51,12 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 
 extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart1;
 
 
 
@@ -62,7 +64,9 @@ extern UART_HandleTypeDef huart2;
 #define BAT_ADC &hadc1
 
 #define IMU_I2C &hi2c1
+#define IMU_I2C_IR I2C1_EV_IRQn
 #define LCD_I2C &hi2c2
+#define LCD_I2C_IR I2C2_EV_IRQn
 
 #define MOT1_TIM &htim1
 #define MOT23_TIM &htim2
@@ -74,6 +78,7 @@ extern UART_HandleTypeDef huart2;
 #define ENC1_TIM &htim3
 #define ENC2_TIM &htim5
 #define ENC3_TIM &htim8
+#define PERIOD_TIM &htim6
 
 #define ENC1_CHANNEL TIM_CHANNEL_1
 #define ENC1_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
@@ -82,7 +87,11 @@ extern UART_HandleTypeDef huart2;
 #define ENC3_CHANNEL TIM_CHANNEL_1
 #define ENC3_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
 
-#define SERIAL &huart2
+#define SERIAL_UART_IR USART2_IRQn
+#define SERIAL_UART &huart2
+#define CONTROL_UART_IR USART1_IRQn
+#define CONTROL_UART &huart1
+#define GPS_UART_IR UART4_IRQn
 #define GPS_UART &huart4
 
 /* USER CODE END EC */
@@ -124,13 +133,13 @@ void myMain();
 #define MOT3_EN_GPIO_Port GPIOB
 #define LCD_SCL_Pin GPIO_PIN_10
 #define LCD_SCL_GPIO_Port GPIOB
+#define MOT1_EN_Pin GPIO_PIN_14
+#define MOT1_EN_GPIO_Port GPIOB
 #define ENC3_A_Pin GPIO_PIN_6
 #define ENC3_A_GPIO_Port GPIOC
 #define ENC3_B_Pin GPIO_PIN_7
 #define ENC3_B_GPIO_Port GPIOC
-#define MOT1_EN_Pin GPIO_PIN_9
-#define MOT1_EN_GPIO_Port GPIOA
-#define MOT1_DIR_Pin GPIO_PIN_10
+#define MOT1_DIR_Pin GPIO_PIN_8
 #define MOT1_DIR_GPIO_Port GPIOA
 #define MOT3_DIR_Pin GPIO_PIN_11
 #define MOT3_DIR_GPIO_Port GPIOA
