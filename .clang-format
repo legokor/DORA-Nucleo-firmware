@@ -11,3 +11,4 @@ SpacesBeforeTrailingComments: 1
 AccessModifierOffset: -4
 
 AllowShortCaseLabelsOnASingleLine: true
+Cpp11BracedListStyle: false

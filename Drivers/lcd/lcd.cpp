@@ -50,7 +50,7 @@ void Lcd::home() {
 }
 
 void Lcd::setCursor(uint8_t row, uint8_t col) {
-    uint8_t row_offsets[] = {0x00, 0x40};
+    uint8_t row_offsets[] = { 0x00, 0x40 };
     addCommand(0x80 | (col + row_offsets[row]));
 }
 
