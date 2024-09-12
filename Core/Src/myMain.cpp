@@ -21,20 +21,20 @@
 
 Lcd lcd;
 Vbat vbat;
-Uart console, control;
+Uart uartJetson, uartEsp;
 Encoder enc1, enc2, enc3;
 Motor mot1, mot2, mot3;
 
 extern "C" {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
-    console.handleReceiveCplt(huart);
-    control.handleReceiveCplt(huart);
+    uartJetson.handleReceiveCplt(huart);
+    uartEsp.handleReceiveCplt(huart);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
-    console.handleTransmitCplt(huart);
-    control.handleTransmitCplt(huart);
+    uartJetson.handleTransmitCplt(huart);
+    uartEsp.handleTransmitCplt(huart);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
@@ -66,14 +66,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
     vbat.handleConversionCplt(hadc);
 }
 
-void controlMotor(float x, float y, float w) {
-    y *= -1;
-    x *= -1;
-    w *= -1;
-
-    float m1 = -0.33f * x + 0.58f * y + 0.33f * w;
-    float m2 = -0.33f * x - 0.58f * y + 0.33f * w;
-    float m3 = +0.67f * x + 0.33f * w;
+/**
+ * Compute motor speed values for the given [...] values.
+ */
+void drive(float x, float y, float w) {
+    float m1 = +0.33f * x - 0.58f * y - 0.33f * w;
+    float m2 = +0.33f * x + 0.58f * y - 0.33f * w;
+    float m3 = -0.67f * x - 0.33f * w;
 
     mot1.setSpeed(m1 * 100);
     mot2.setSpeed(m2 * 100);
@@ -83,8 +82,8 @@ void controlMotor(float x, float y, float w) {
 void myMain() {
     HAL_TIM_Base_Start_IT(PERIOD_TIM);
 
-    console.init(SERIAL_UART, SERIAL_UART_IR, 1000, 1000);
-    control.init(CONTROL_UART, CONTROL_UART_IR, 1000, 1000);
+    uartJetson.init(SERIAL_UART, SERIAL_UART_IR, 1000, 1000);
+    uartEsp.init(CONTROL_UART, CONTROL_UART_IR, 1000, 1000);
 
     enc1.init(ENC1_TIM, ENC1_CHANNEL, ENC1_ACTIVE_CHANNEL, 65536, 22500000, ENC1_A_GPIO_Port, ENC1_A_Pin,
               ENC1_B_GPIO_Port, ENC1_B_Pin, 2500, false);
@@ -92,6 +91,7 @@ void myMain() {
               ENC2_B_GPIO_Port, ENC2_B_Pin, 2500, false);
     enc3.init(ENC3_TIM, ENC3_CHANNEL, ENC3_ACTIVE_CHANNEL, 65536, 22500000, ENC3_A_GPIO_Port, ENC3_A_Pin,
               ENC3_B_GPIO_Port, ENC3_B_Pin, 2500, true);
+
     mot1.init(MOT1_TIM, MOT1_EN_CH, true, 1024, 1000, 18000000, MOT1_DIR_GPIO_Port, MOT1_DIR_Pin, false, true, &enc1,
               1.5f, 40.0f, 0.0f);
     mot3.init(MOT23_TIM, MOT3_EN_CH, false, 1024, 1000, 18000000, MOT3_DIR_GPIO_Port, MOT3_DIR_Pin, false, true, &enc3,
