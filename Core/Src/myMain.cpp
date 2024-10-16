@@ -12,6 +12,7 @@
 #include "motor.h"
 #include "uart.h"
 #include "vbat.h"
+#include "mpu9250.h"
 
 #include <cmath>
 #include <iostream>
@@ -24,20 +25,29 @@ Vbat vbat;
 Uart uartJetson, uartEsp;
 Encoder enc1, enc2, enc3;
 Motor mot1, mot2, mot3;
+Mpu9250* mpuPtr;
+
+volatile bool initCplt = false;
 
 extern "C" {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
+	if(!initCplt)
+		return;
     uartJetson.handleReceiveCplt(huart);
     uartEsp.handleReceiveCplt(huart);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart) {
+	if(!initCplt)
+		return;
     uartJetson.handleTransmitCplt(huart);
     uartEsp.handleTransmitCplt(huart);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+	if(!initCplt)
+		return;
     enc1.handleTimerOverflow(htim);
     enc2.handleTimerOverflow(htim);
     enc3.handleTimerOverflow(htim);
@@ -53,16 +63,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim) {
+	if(!initCplt)
+		return;
     enc1.handleInputCapture(htim);
     enc2.handleInputCapture(htim);
     enc3.handleInputCapture(htim);
 }
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef* i2c) {
+	if(!initCplt)
+		return;
     lcd.handleTransmitCplt(i2c);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	if(!initCplt)
+		return;
     vbat.handleConversionCplt(hadc);
 }
 
@@ -105,6 +121,14 @@ void myMain() {
     lcd.printf(0, 0, "Init complete");
     lcd.enableBacklight(true);
 
-    // TODO: main loop
+    Mpu9250 mpu(IMU_I2C, 0x68, 0x0C);
+    mpuPtr = &mpu;
+
+    initCplt = true;
+
+    while(1)
+    {
+    	// TODO: main loop
+    }
 }
 }
