@@ -10,7 +10,7 @@
 #include "encoder.h"
 #include "lcd.h"
 #include "motor.h"
-#include "uart.h"
+#include "textUart.h"
 #include "vbat.h"
 
 #include <cmath>
@@ -21,7 +21,7 @@
 
 Lcd lcd;
 Vbat vbat;
-Uart uartJetson, uartEsp;
+TextUart uartJetson, uartEsp;
 Encoder enc1, enc2, enc3;
 Motor mot1, mot2, mot3;
 
