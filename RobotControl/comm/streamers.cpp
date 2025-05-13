@@ -26,6 +26,10 @@ void IStream::enable(bool enable) {
     enabled = enable;
 }
 
+void IStream::setUpdateInterval(uint32_t updateInterval) {
+    this->updateInterval = updateInterval;
+}
+
 bool IStream::isUpdateNeeded() {
     if (enabled) {
         uint32_t now = HAL_GetTick();

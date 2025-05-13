@@ -24,6 +24,12 @@ The following are the currently supported frame types.
 This frame contains the movement commands for the robot. The payload consists of 3 floats: the `X`, `Y` and `W` movement speed (in this order).
 - The reply has a frame type byte of **2'01000001** and no payload.
 
+### Stream settings request frame (2'00000010):
+This frame is used to enable or disable the streaming of the robot data. The payload consists of 2 bytes:
+- The first byte is the stream ID byte, which can be any of the stream IDs listed below.
+- The second byte is the streaming settings uin32_t, which if set to `0` disables the streaming of the given stream ID, and otherwise sets the streaming update rate in ms.
+- The reply has a frame type byte of **2'01000010** and no payload.
+
 ### Robot speed data frame (2'10000010):
 This is a frame that the Nucleo streams at a certain frequency, that contains the currently measured speed of the robot in the form of 3 floats: `X`, `Y`
 and `W`.

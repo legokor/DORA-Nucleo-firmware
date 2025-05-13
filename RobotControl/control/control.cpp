@@ -21,6 +21,7 @@ static Drive drive;
 static comm::CommServer commServer;
 
 static comm::MotorSpeedRequestReply motorSpeedRR;
+static comm::StreamSettingsRequestReply streamSettingsRR;
 
 static comm::DriveSpeedStream driveSpeedStream;
 static comm::StatusStream statusStream;
@@ -28,7 +29,7 @@ static comm::StatusStream statusStream;
 static void initRobot() {
     HAL_TIM_Base_Start_IT(PERIOD_TIM);
 
-    robotInstance.jetsonUart.init(SERIAL_UART, SERIAL_UART_IR, 42, 69, 123);
+    robotInstance.jetsonUart.init(CONTROL_UART, CONTROL_UART_IR, 42, 69, 123);
 
     robotInstance.enc1.init(ENC1_TIM, ENC1_CHANNEL, ENC1_ACTIVE_CHANNEL, 65536, 22500000, ENC1_A_GPIO_Port, ENC1_A_Pin,
                             ENC1_B_GPIO_Port, ENC1_B_Pin, 2500, false);
@@ -53,12 +54,15 @@ static void initRobot() {
     robotInstance.initCplt = true;
 }
 
+static comm::IStream* streams[] = { &driveSpeedStream, &statusStream };
+
 static void initSystems() {
     drive.init();
 
     commServer.init(&robotInstance.jetsonUart, nullptr, 0);
 
     motorSpeedRR.init(&drive);
+    streamSettingsRR.init(streams, sizeof(streams) / sizeof(streams[0]));
 
     driveSpeedStream.init(&commServer, &drive, 10);
     statusStream.init(&commServer, 500);
@@ -72,9 +76,9 @@ void startControl() {
 
     drive.enableDrive(true);
 
-    comm::RequestReply* rrTypes[] = { &motorSpeedRR };
+    comm::RequestReply* rrTypes[] = { &motorSpeedRR, &streamSettingsRR };
     comm::IStream* streams[] = { &driveSpeedStream, &statusStream };
-    commServer.setRequestReplyTypes(rrTypes, 2);
+    commServer.setRequestReplyTypes(rrTypes, sizeof(rrTypes) / sizeof(rrTypes[0]));
 
     statusStream.enable(true);
     driveSpeedStream.enable(true);

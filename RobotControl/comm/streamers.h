@@ -32,6 +32,7 @@ protected:
 public:
     uint8_t getID() const;
     void enable(bool enable);
+    void setUpdateInterval(uint32_t updateInterval);
     virtual void update() = 0;
 };
 
