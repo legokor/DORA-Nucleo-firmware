@@ -30,12 +30,12 @@ This frame is used to enable or disable the streaming of the robot data. The pay
 - The second byte is the streaming settings uin32_t, which if set to `0` disables the streaming of the given stream ID, and otherwise sets the streaming update rate in ms.
 - The reply has a frame type byte of **2'01000010** and no payload.
 
-### Robot speed data frame (2'10000010):
+### Robot speed data frame (2'10000001):
 This is a frame that the Nucleo streams at a certain frequency, that contains the currently measured speed of the robot in the form of 3 floats: `X`, `Y`
 and `W`.
 - As this is a stream frame, there is no reply.
 
-### Robot status data frame (2'10000011):
+### Robot status data frame (2'10000010):
 This is a frame that the Nucleo streams at a certain frequency, that contains the current status of the robot. The payload consists of 1 float: `the battery voltage`.
 
 **Dev info:** **_Currently the Nucleo streams this data by default without the need to enable it_**

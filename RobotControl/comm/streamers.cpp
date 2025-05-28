@@ -44,7 +44,7 @@ bool IStream::isUpdateNeeded() {
 }
 
 void DriveSpeedStream::init(CommServer* commServer, Drive* drive, uint32_t updateInterval) {
-    IStream::init(0x02, commServer, updateInterval);
+    IStream::init(0x01, commServer, updateInterval);
     this->drive = drive;
 }
 
@@ -58,7 +58,7 @@ void DriveSpeedStream::update() {
 }
 
 void StatusStream::init(CommServer* commServer, uint32_t updateInterval) {
-    IStream::init(0x03, commServer, updateInterval);
+    IStream::init(0x02, commServer, updateInterval);
 }
 
 void StatusStream::update() {

@@ -51,9 +51,11 @@ def decode_payload(content: bytes):
         print("  W speed: {:.3f}".format(w))
     elif category == 1 and frame_id == 1:
         # Robot speed reply frame: no payload.
-        print("Robot Speed Reply Frame:")
-        print("  Sequence Number:", seq)
-    elif category == 2 and frame_id == 2:
+        print("Robot Speed Reply Frame received with sequence number:", seq)
+    elif category == 1 and frame_id == 2:
+        # Robot streaming settings reply (no payload).
+        print("Robot Streaming Settings Reply Frame received with sequence number:", seq)
+    elif category == 2 and frame_id == 1:
         if not streaming_data_enabled:
             return
         # Robot speed data frame: 3 floats (4 bytes each = 12 bytes).
@@ -65,7 +67,7 @@ def decode_payload(content: bytes):
         print("  X speed: {:.3f}".format(x))
         print("  Y speed: {:.3f}".format(y))
         print("  W speed: {:.3f}".format(w))
-    elif category == 2 and frame_id == 3:
+    elif category == 2 and frame_id == 2:
         if not streaming_data_enabled:
             return
         # Robot status data frame: 1 float.
@@ -94,6 +96,23 @@ def create_set_speed_payload(x: float, y: float, w: float):
     # Compute checksum: sum of header and payload bytes mod 256.
     checksum = sum(header_payload) % 256
 
+    # Build final frame with SOF, header_payload, checksum, and EOF.
+    frame = header_payload + bytes([checksum])
+    return frame
+
+def create_set_streaming_settings_payload(streamId: int, period: int):
+    global sequence_number
+    # Frame type for robot speed request: category=0, ID=2 → 0b00_000010 = 0x02.
+    frame_type = 0x02
+    seq = sequence_number & 0xFF
+    sequence_number = (sequence_number + 1) % 256
+
+    # Pack the payload: streamId (1 byte) and period (4 bytes).
+    payload = struct.pack("<B I", streamId, period)
+    # Build header: frame type, sequence number, then payload.
+    header_payload = bytes([frame_type, seq]) + payload
+    # Compute checksum: sum of header and payload bytes mod 256.
+    checksum = sum(header_payload) % 256
     # Build final frame with SOF, header_payload, checksum, and EOF.
     frame = header_payload + bytes([checksum])
     return frame
@@ -204,22 +223,34 @@ def main():
         read_thread.start()
 
         while True:
-            if streaming_data_enabled:
-                user_input = input("Enter s to stop streaming...")
-                if user_input == "s":
-                    streaming_data_enabled = False
-                    print("Streaming stopped.")
-                    continue
-            else:
-                user_input = input("Enter the speeds on all three axes (separated by ,) OR enter s to see the streaming data: ")
-                if user_input == "s":
-                    streaming_data_enabled = True
-                    print("Streaming started.")
-                    continue
-                sets = user_input.split(",")
-                payload = create_set_speed_payload(float(sets[0]), float(sets[1]), float(sets[2]))
-                frame = encode_frame(payload)
-                ser.write(frame)
+            try:
+                if streaming_data_enabled:
+                    user_input = input("Enter s to stop streaming...")
+                    if user_input == "s":
+                        streaming_data_enabled = False
+                        print("Streaming stopped.")
+                        continue
+                else:
+                    user_input = input("\n\n[s] - show streaming data\n[speed x,y,w] - set robot speed\n[config id,period] - set streaming settings\nEnter command: ")
+                    tokens = user_input.split()
+                    if tokens[0] == "s":
+                        streaming_data_enabled = True
+                        print("Streaming started.")
+                        continue
+                    elif tokens[0] == "speed":
+                        sets = tokens[1].split(",")
+                        payload = create_set_speed_payload(float(sets[0]), float(sets[1]), float(sets[2]))
+                        frame = encode_frame(payload)
+                        ser.write(frame)
+                    elif tokens[0] == "config":
+                        sets = tokens[1].split(",")
+                        stream_id = int(sets[0])
+                        period = int(sets[1])
+                        payload = create_set_streaming_settings_payload(stream_id, period)
+                        frame = encode_frame(payload)
+                        ser.write(frame)
+            except Exception as e:
+                print(f"Error processing input: {e}")
 
     except serial.SerialException as e:
         print(f"Error opening {com_port}: {e}")
