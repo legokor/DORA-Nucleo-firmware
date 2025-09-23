@@ -89,6 +89,8 @@ void Error_Handler(void);
 #define MOT1_DIR_GPIO_Port GPIOA
 #define MOT3_DIR_Pin GPIO_PIN_11
 #define MOT3_DIR_GPIO_Port GPIOA
+#define MAIN_PWR_EN_Pin GPIO_PIN_12
+#define MAIN_PWR_EN_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

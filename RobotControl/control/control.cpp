@@ -51,6 +51,8 @@ static void initRobot() {
     robotInstance.lcd.printf(0, 0, "Init complete");
     robotInstance.lcd.enableBacklight(true);
 
+    HAL_GPIO_WritePin(MAIN_PWR_EN_GPIO_Port, MAIN_PWR_EN_Pin, GPIO_PIN_SET);
+
     robotInstance.initCplt = true;
 }
 
