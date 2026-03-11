@@ -1,17 +1,20 @@
 /*
- * uart.cpp
+ * textUart.cpp
  *
  *  Created on: Mar 13, 2023
  *      Author: dkiovics
  */
 
-#include "uart.h"
+#include "textUart.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-void Uart::init(UART_HandleTypeDef* huart, IRQn_Type uartIr, uint16_t writeBufferLenght, uint16_t readBufferLenght) {
+void TextUart::init(UART_HandleTypeDef* huart,
+                    IRQn_Type uartIr,
+                    uint16_t writeBufferLenght,
+                    uint16_t readBufferLenght) {
     this->huart = huart;
     this->writeBufferLenght = writeBufferLenght;
     this->readBufferLenght = readBufferLenght;
@@ -33,7 +36,7 @@ void Uart::init(UART_HandleTypeDef* huart, IRQn_Type uartIr, uint16_t writeBuffe
     this->ok = true;
 }
 
-void Uart::handleTransmitCplt(UART_HandleTypeDef* huart) {
+void TextUart::handleTransmitCplt(UART_HandleTypeDef* huart) {
     if (this->huart != huart || !ok)
         return;
 
@@ -54,7 +57,7 @@ void Uart::handleTransmitCplt(UART_HandleTypeDef* huart) {
     }
 }
 
-void Uart::transmit(const char* fmt, ...) {
+void TextUart::transmit(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
@@ -65,7 +68,7 @@ void Uart::transmit(const char* fmt, ...) {
     int spaceTillBufferEnd = writeBufferLenght - endOfWriteData - 1;
 
     if (spaceTillBufferEnd >= size) {
-        memcpy((void*) writeCircularBuffer + endOfWriteData + 1, (const void*) writeBuffer, size);
+        memcpy((void*) (writeCircularBuffer + endOfWriteData + 1), (const void*) writeBuffer, size);
         HAL_NVIC_DisableIRQ(uartIr);
 
         if (startOfWriteData == -1) {
@@ -81,9 +84,10 @@ void Uart::transmit(const char* fmt, ...) {
         HAL_NVIC_EnableIRQ(uartIr);
     } else {
         if (spaceTillBufferEnd > 0)
-            memcpy((void*) writeCircularBuffer + endOfWriteData + 1, (const void*) writeBuffer, spaceTillBufferEnd);
+            memcpy((void*) (writeCircularBuffer + endOfWriteData + 1), (const void*) writeBuffer, spaceTillBufferEnd);
 
-        memcpy((void*) writeCircularBuffer, (const void*) writeBuffer + spaceTillBufferEnd, size - spaceTillBufferEnd);
+        memcpy((void*) writeCircularBuffer, (const void*) (writeBuffer + spaceTillBufferEnd),
+               size - spaceTillBufferEnd);
         HAL_NVIC_DisableIRQ(uartIr);
 
         if (startOfWriteData == -1) {
@@ -115,7 +119,7 @@ void Uart::transmit(const char* fmt, ...) {
     }
 }
 
-void Uart::handleReceiveCplt(UART_HandleTypeDef* huart) {
+void TextUart::handleReceiveCplt(UART_HandleTypeDef* huart) {
     if (this->huart != huart)
         return;
 
@@ -147,7 +151,7 @@ void Uart::handleReceiveCplt(UART_HandleTypeDef* huart) {
     HAL_UART_Receive_IT(huart, (uint8_t*) readCircularBuffer + readPtr, 1);
 }
 
-bool Uart::receive(char* data) {
+bool TextUart::receive(char* data) {
     HAL_NVIC_DisableIRQ(uartIr);
     int32_t newLine = mostRecentNewLinePos;
     uint16_t startOfData = this->startOfReadData;
@@ -167,21 +171,21 @@ bool Uart::receive(char* data) {
 
     if (startOfData > newLine) {
         uint16_t diff = readBufferLenght - startOfData;
-        memcpy(data, (const void*) readCircularBuffer + startOfData, diff);
+        memcpy(data, (const void*) (readCircularBuffer + startOfData), diff);
         memcpy(data + diff, (const void*) readCircularBuffer, newLine + 1);
         data[diff + newLine + 1] = '\0';
     } else {
-        memcpy(data, (const void*) readCircularBuffer + startOfData, newLine - startOfData + 1);
+        memcpy(data, (const void*) (readCircularBuffer + startOfData), newLine - startOfData + 1);
         data[newLine - startOfData + 1] = '\0';
     }
 
     return true;
 }
 
-uint16_t Uart::getWriteBufferLenght() {
+uint16_t TextUart::getWriteBufferLenght() {
     return writeBufferLenght;
 }
 
-uint16_t Uart::getReadBufferLenght() {
+uint16_t TextUart::getReadBufferLenght() {
     return readBufferLenght;
 }

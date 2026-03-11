@@ -1,16 +1,16 @@
 /*
- * uart.h
+ * textUart.h
  *
  *  Created on: Mar 13, 2023
  *      Author: dkiovics
  */
 
-#ifndef UART_UART_H_
-#define UART_UART_H_
+#ifndef UART_TEXT_UART_H_
+#define UART_TEXT_UART_H_
 
 #include "stm32f4xx_hal.h"
 
-class Uart {
+class TextUart {
 public:
     /*
      * Initializes the UART object
@@ -62,4 +62,4 @@ private:
     volatile bool ok = false;
 };
 
-#endif /* UART_UART_H_ */
+#endif /* UART_TEXT_UART_H_ */

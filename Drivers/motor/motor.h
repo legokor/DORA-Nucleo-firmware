@@ -8,7 +8,7 @@
 #ifndef MOTOR_MOTOR_H_
 #define MOTOR_MOTOR_H_
 
-#include "encoder.h"
+#include "encoder/encoder.h"
 #include "stm32f4xx_hal.h"
 
 /*
