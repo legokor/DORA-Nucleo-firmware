@@ -72,6 +72,8 @@ public:
         this->frameEndFlag = frameEndFlag;
         this->escapeFlag = escapeFlag;
         HAL_UART_Receive_DMA(huart, (uint8_t*) rxBuffer, rxFrameBufferSize);
+        __HAL_UART_DISABLE_IT(huart, UART_IT_RXNE | UART_IT_ERR | UART_IT_PE);
+
     }
 
     uint32_t writeData(const uint8_t* data, uint8_t length) override {
